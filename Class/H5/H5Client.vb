@@ -153,7 +153,7 @@ Namespace ShanXingTech.Alibaba
         End Function
 
         ''' <summary>
-        ''' 重新获取基础令牌。如果请求返回 类似 ‘FAIL_SYS_ILLEGAL_ACCESS::非法请求’，可以尝试执行一次这个函数
+        ''' 重新获取基础令牌。如果请求返回 类似 ‘FAIL_SYS_TOKEN_EXOIRED::令牌过期’或‘FAIL_SYS_ILLEGAL_ACCESS::非法请求’，可以尝试执行一次这个函数
         ''' </summary>
         ''' <returns></returns>
         Public Async Function ReGetBaseTokenAsync() As Task
@@ -232,7 +232,7 @@ Namespace ShanXingTech.Alibaba
         ''' <param name="data"></param>
         ''' <returns></returns>
         Private Function GetFirstSign(ByVal data As String) As String
-            ' 此处获取到的m_h5_tk貌似是有实效或者是请求个数限制，达到限制之后，得重新获取才能继续请求，不然会导致返回
+            ' 此处获取到的m_h5_tk貌似是有时效或者是请求个数限制，达到限制之后，得重新获取才能继续请求，不然会导致返回
             '  {"api":"mtop.taobao.wsearch.h5search","data":{},"ret":["FAIL_SYS_ILLEGAL_ACCESS::非法请求"],"v":"1.0"}
             ' 20181218
 

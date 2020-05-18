@@ -24,6 +24,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <WarningsAsErrors>41999,42016,42020,42021,42022</WarningsAsErrors>
     <Optimize>false</Optimize>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -57,6 +58,9 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="shanxinglib">
+      <HintPath>..\shanxinglib\bin\Debug\shanxinglib.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
@@ -141,12 +145,6 @@
     <None Include="packages.config" />
     <None Include="README.md" />
     <None Include="ShanXingTech.pfx" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\shanxinglib\shanxinglib.vbproj">
-      <Project>{6b546cd6-6940-4b7d-bf58-0d5e84c67f90}</Project>
-      <Name>shanxinglib</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitattributes" />
