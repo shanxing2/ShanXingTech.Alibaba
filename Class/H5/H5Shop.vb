@@ -119,7 +119,7 @@ Namespace ShanXingTech.Alibaba
             '    {"Accept-Encoding", "gzip, deflate"},
             '    {"Referer", referer}
             '}
-            'Dim ccc = Await HttpAsync.TryGetAsync(url, httpHeaders, 1)
+            'Dim ccc = Await HttpAsync.Instance.TryGetAsync(url, httpHeaders, 1)
             Return (getRst.Success, getRst.Message)
         End Function
 

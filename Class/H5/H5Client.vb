@@ -82,6 +82,14 @@ Namespace ShanXingTech.Alibaba
 
 #Region "函数区"
         ''' <summary>
+        ''' 重新设置cookie以初始化
+        ''' </summary>
+        ''' <param name="cookies"></param>
+        Public Sub ResetCookie(ByRef cookies As CookieContainer)
+            m_Http.ReInit(cookies)
+        End Sub
+
+        ''' <summary>
         ''' 执行Post请求
         ''' </summary>
         ''' <param name="url"></param>
@@ -98,7 +106,7 @@ Namespace ShanXingTech.Alibaba
             {"Referer", referer}
         }
 
-            Return Await m_Http.TryPostAsync(url, httpHeadersParam, postData, encoding, 3, 0)
+            Return Await m_Http.TryPostAsync(url, httpHeadersParam, postData, encoding, 3)
         End Function
 
         ''' <summary>
@@ -115,12 +123,12 @@ Namespace ShanXingTech.Alibaba
                 {"Accept-Encoding", "gzip, deflate"},
                 {"Referer", referer}
             }
-            Dim getRst = Await m_Http.TryGetAsync(url, httpHeadersParam, 3, 0)
+            Dim getRst = Await m_Http.TryGetAsync(url, httpHeadersParam, 3)
             ' "ret":["SUCCESS::调用成功"],"v":"1.0"}
             ' "ret":["FAIL_SYS_ILLEGAL_ACCESS::非法请求"],"v":"1.0"}
             ' 新版手机淘宝要求一定要先登录才能搜索，否则会返回 ret: ["RGV587_ERROR::SM" 20190104
             While Not getRst.Success OrElse getRst.Message.Length = 0
-                getRst = Await m_Http.TryGetAsync(url, httpHeadersParam, 3, 0)
+                getRst = Await m_Http.TryGetAsync(url, httpHeadersParam, 3)
             End While
 
             Return getRst
@@ -215,7 +223,7 @@ Namespace ShanXingTech.Alibaba
                     }
                     Dim serialData = MSJsSerializer.Serialize(data)
                     Dim url = $"{m_DefaultApiUrl}&t={Date.Now.ToTimeStampString(TimePrecision.Millisecond)}&sign={GetFirstSign(serialData)}"
-                    Await m_Http.TryGetThreeTimeIfErrorAsync(url, 0)
+                    Await m_Http.TryGetThreeTimeIfErrorAsync(url)
                 Next
             Catch ex As Exception
                 Logger.WriteLine(ex)

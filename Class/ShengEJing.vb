@@ -8,24 +8,12 @@ Namespace ShanXingTech.Alibaba
     Public Class ShengEJingHelper
 #Region "字段区"
         'Private m_HttpHeadersParam As Dictionary(Of String, String)
-        Private m_UserAgent As String
-        Private m_Domain As String
+        Private ReadOnly m_UserAgent As String
+        Private ReadOnly m_Domain As String
 #End Region
 
 #Region "属性"
-        Private m_IsLogin As Boolean
-        Public ReadOnly Property IsLogin() As Boolean
-            Get
-                Return m_IsLogin
-            End Get
-        End Property
-
-        Private m_ModifyBaobeiIdBag As Concurrent.ConcurrentBag(Of String)
         Public ReadOnly Property ModifyBaobeiIdBc() As Concurrent.ConcurrentBag(Of String)
-            Get
-                Return m_ModifyBaobeiIdBag
-            End Get
-        End Property
 
 #End Region
 
@@ -37,9 +25,9 @@ Namespace ShanXingTech.Alibaba
         ''' <param name="userAgent">模拟浏览器UA</param>
         ''' <param name="modifyBaobeiIds">可以用于修改的宝贝Id</param>
         Public Sub New(ByVal domain As String, ByVal userAgent As String, ByVal modifyBaobeiIds As String())
-            m_ModifyBaobeiIdBag = New Concurrent.ConcurrentBag(Of String)
+            ModifyBaobeiIdBc = New Concurrent.ConcurrentBag(Of String)
             For Each id In modifyBaobeiIds
-                m_ModifyBaobeiIdBag.Add(id)
+                ModifyBaobeiIdBc.Add(id)
             Next
             m_UserAgent = userAgent
             m_Domain = domain
@@ -54,20 +42,16 @@ Namespace ShanXingTech.Alibaba
         ''' <returns></returns>
         Private Async Function TryDoGet(ByVal url As String, ByVal httpHeadersParam As Dictionary(Of String, String)) As Task(Of String)
             ' 更新店内宝贝的标题为搜索的标题（只能分析自己店铺的宝贝）
-            Dim getRst = Await HttpAsync.GetAsync(url, httpHeadersParam)
+            Dim getRst = Await HttpAsync.Instance.GetAsync(url, httpHeadersParam)
             Do While getRst.StatusCode <> HttpStatusCode.OK OrElse getRst.Message.Length = 0
-                getRst = Await HttpAsync.GetAsync(url, httpHeadersParam)
+                getRst = Await HttpAsync.Instance.GetAsync(url, httpHeadersParam)
             Loop
 
             If HttpStatusCode.BadRequest = getRst.StatusCode Then
                 Return Await TryDoGet(url, httpHeadersParam)
             End If
 
-            If HttpStatusCode.OK = getRst.StatusCode Then
-                Return getRst.Message
-            Else
-                Return getRst.StatusCode.ToString
-            End If
+            Return If(HttpStatusCode.OK = getRst.StatusCode, getRst.Message, getRst.StatusCode.ToString)
         End Function
 
         ''' <summary>
@@ -103,7 +87,7 @@ Namespace ShanXingTech.Alibaba
                 Logger.WriteLine(ex)
             Finally
                 ' 用完了及时还回
-                m_ModifyBaobeiIdBag.Add(modifyBaobeiId)
+                ModifyBaobeiIdBc.Add(modifyBaobeiId)
             End Try
 
             Return (succeed, message)
@@ -114,7 +98,7 @@ Namespace ShanXingTech.Alibaba
             'Await Task.Run(
             '    Sub()
             Do
-                m_ModifyBaobeiIdBag.TryTake(id)
+                ModifyBaobeiIdBc.TryTake(id)
                 Windows2.Delay(100)
             Loop Until Not id.IsNullOrEmpty
             'End Sub)
@@ -146,7 +130,7 @@ Namespace ShanXingTech.Alibaba
             Dim pattern = "宝贝无线APP搜索分词.*?PC端直通车词分析"
             Dim match = Regex.Match(html, pattern, RegexOptions.IgnoreCase Or RegexOptions.Compiled)
             If Not match.Success Then
-                Logger.WriteLine( "获取分词div失败")
+                Logger.WriteLine("获取分词div失败")
                 Return
             End If
 

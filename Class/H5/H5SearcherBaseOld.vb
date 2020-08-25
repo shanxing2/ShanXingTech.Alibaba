@@ -134,12 +134,12 @@ Namespace ShanXingTech.Alibaba
 
 
         Private Async Function SearchInternal(ByVal url As String) As Task(Of String)
-            Dim getRst = Await HttpAsync.TryGetAsync(url, httpHeadersParam, 0)
+            Dim getRst = Await HttpAsync.Instance.TryGetAsync(url, httpHeadersParam, 0)
             If getRst.StatusCode <> Net.HttpStatusCode.OK OrElse
              Not CheckSearchResult(getRst.Message) Then
                 For i = 1 To TryTimesIfError
                     Windows2.RandDelay(1000, 2000, TimePrecision.Millisecond)
-                    getRst = Await HttpAsync.TryGetAsync(url, httpHeadersParam, 0)
+                    getRst = Await HttpAsync.Instance.TryGetAsync(url, httpHeadersParam, 0)
                     If getRst.StatusCode <> Net.HttpStatusCode.OK OrElse
              Not CheckSearchResult(getRst.Message) Then
                         Continue For
