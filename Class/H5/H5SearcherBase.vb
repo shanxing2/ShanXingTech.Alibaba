@@ -1,6 +1,7 @@
 ﻿Imports System.Net
 Imports System.Text.RegularExpressions
 Imports System.Windows.Forms
+
 Imports ShanXingTech
 Imports ShanXingTech.Alibaba.H5ApiSearchResultEntity
 Imports ShanXingTech.Exception2
@@ -10,6 +11,7 @@ Imports ShanXingTech.Text2
 Namespace ShanXingTech.Alibaba
     Public Class H5SearcherBase
         Inherits H5Client
+        Implements IDisposable
 
 
 #Region "字段区"
@@ -17,6 +19,7 @@ Namespace ShanXingTech.Alibaba
         Private m_BaseRefererTemplete As String
         Private m_IsInit As Boolean
         Private m_SearchDataDic As Dictionary(Of String, Object)
+        Private m_Cts As Threading.CancellationTokenSource
 #End Region
 
 #Region "属性 区"
@@ -25,7 +28,6 @@ Namespace ShanXingTech.Alibaba
         ''' </summary>
         ''' <returns></returns>
         Private Property instanceForm As Form
-        Private Property httpHeadersParam As Dictionary(Of String, String)
         Public Property TryTimesIfError As Integer
 #End Region
 
@@ -37,21 +39,50 @@ Namespace ShanXingTech.Alibaba
 
             ' 获取实例化这个类的窗体,窗体已经show之后才能获取到实例化这个类的窗体
             instanceForm = TryCast(Control.FromHandle(Process.GetCurrentProcess().MainWindowHandle), Form)
+
+            m_Cts = New Threading.CancellationTokenSource
         End Sub
 #End Region
+
+#Region "IDisposable Support"
+        Private disposedValue As Boolean ' 要检测冗余调用
+
+        ' IDisposable
+        Protected Sub Dispose(disposing As Boolean)
+            If Not disposedValue Then
+                If disposing Then
+                    ' TODO: 释放托管资源(托管对象)。
+                    m_Cts?.Dispose()
+                End If
+
+                ' TODO: 释放未托管资源(未托管对象)并在以下内容中替代 Finalize()。
+                ' TODO: 将大型字段设置为 null。
+            End If
+            disposedValue = True
+        End Sub
+
+        ' TODO: 仅当以上 Dispose(disposing As Boolean)拥有用于释放未托管资源的代码时才替代 Finalize()。
+        'Protected Overrides Sub Finalize()
+        '    ' 请勿更改此代码。将清理代码放入以上 Dispose(disposing As Boolean)中。
+        '    Dispose(False)
+        '    MyBase.Finalize()
+        'End Sub
+
+        ' Visual Basic 添加此代码以正确实现可释放模式。
+        Public Sub Dispose() Implements IDisposable.Dispose
+            ' 请勿更改此代码。将清理代码放入以上 Dispose(disposing As Boolean)中。
+            Dispose(True)
+            ' TODO: 如果在以上内容中替代了 Finalize()，则取消注释以下行。
+            ' GC.SuppressFinalize(Me)
+        End Sub
+#End Region
+
 
 #Region "函数区"
         Public Async Function InitAsync() As Task(Of Boolean)
             If m_IsInit Then Return True
 
             m_SearchDataDic = New Dictionary(Of String, Object)
-            httpHeadersParam = New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase) From {
-                {"User-Agent", UserAgent},
-                {"dnt", "1"},
-                {"cache-control", "no-cache"},
-                {"Accept-Encoding", "gzip, deflate, sdch, br"}，
-                {"connection", "keep-alive"}
-            }
 
             m_IsInit = Await MakeBaseUrlTempleteAsync()
 
@@ -60,10 +91,10 @@ Namespace ShanXingTech.Alibaba
 
         Private Async Function MakeBaseUrlTempleteAsync() As Task(Of Boolean)
             Dim h5HomePage = "https://h5.m.taobao.com/"
-            Await SearchInternal(h5HomePage)
+            Await SearchAsync(h5HomePage)
 
             Dim searchUrl = "https://s.m.taobao.com/h5?search-btn=&event_submit_do_new_search_auction=1&_input_charset=utf-8&topSearch=1&atype=b&searchfrom=1&action=home%3Aredirect_app_action&from=1"
-            Dim html = Await SearchInternal(searchUrl)
+            Dim html = Await SearchAsync(searchUrl)
             Dim rst = InternalMakeBaseTempleteAsync(html)
             m_BaseUrlTemplete = rst.Url
             m_BaseRefererTemplete = rst.Referer
@@ -125,15 +156,15 @@ Namespace ShanXingTech.Alibaba
         End Function
 
 
-        Private Async Function SearchInternal(ByVal url As String) As Task(Of String)
-            Dim getRst = Await HttpAsync.Instance.TryGetAsync(url, httpHeadersParam, 0)
+        Private Async Function SearchAsync(ByVal url As String) As Task(Of String)
+            Dim getRst = Await DoGetAsync(url)
             If getRst.StatusCode <> Net.HttpStatusCode.OK OrElse
              Not CheckSearchResult(getRst.Message) Then
                 For i = 1 To TryTimesIfError
                     Windows2.RandDelay(1000, 2000, TimePrecision.Millisecond)
-                    getRst = Await HttpAsync.Instance.TryGetAsync(url, httpHeadersParam, 0)
+                    getRst = Await DoGetAsync(url)
                     If getRst.StatusCode <> Net.HttpStatusCode.OK OrElse
-             Not CheckSearchResult(getRst.Message) Then
+                        Not CheckSearchResult(getRst.Message) Then
                         Continue For
                     Else
                         Exit For
@@ -191,6 +222,11 @@ Namespace ShanXingTech.Alibaba
         ''' <param name="page">页数</param>
         ''' <returns></returns>
         Public Async Function SearchAsync(ByVal keyword As String, ByVal saleSort As Boolean, ByVal page As Integer) As Task(Of Root)
+            If m_Cts.IsCancellationRequested Then
+                m_Cts = New Threading.CancellationTokenSource
+                Return Nothing
+            End If
+
             Dim getRst = Await DoGetAsync(Await GetSearchUrlAsync(keyword, saleSort, page), GetReferer(keyword))
             If Not getRst.Success Then Return Nothing
             Dim json = getRst.Message
@@ -210,11 +246,11 @@ Namespace ShanXingTech.Alibaba
                     End If
                 End If
             Catch ex As ArgumentNullException
-                Logger.WriteLine( $"{ex.Message}   Keyword:{keyword}   SaleSort:{saleSort} Page:{page.ToStringOfCulture}   Json:{json}")
+                Logger.WriteLine($"{ex.Message}   Keyword:{keyword}   SaleSort:{saleSort} Page:{page.ToStringOfCulture}   Json:{json}")
             Catch ex As ArgumentException
-                Logger.WriteLine( $"{ex.Message}   Keyword:{keyword}   SaleSort:{saleSort} Page:{page.ToStringOfCulture}   Json:{json}")
+                Logger.WriteLine($"{ex.Message}   Keyword:{keyword}   SaleSort:{saleSort} Page:{page.ToStringOfCulture}   Json:{json}")
             Catch ex As InvalidOperationException
-                Logger.WriteLine( $"{ex.Message}   Keyword:{keyword}   SaleSort:{saleSort} Page:{page.ToStringOfCulture}   Json:{json}")
+                Logger.WriteLine($"{ex.Message}   Keyword:{keyword}   SaleSort:{saleSort} Page:{page.ToStringOfCulture}   Json:{json}")
             Catch ex As Exception
                 Logger.WriteLine(ex, $"Keyword:{keyword}  SaleSort:{saleSort}  Page:{page.ToStringOfCulture}   Json:{json}",,,)
             End Try
@@ -223,6 +259,21 @@ Namespace ShanXingTech.Alibaba
             Return root
 #Enable Warning bc42104
         End Function
+
+        ''' <summary>
+        ''' 通知以取消搜索任务
+        ''' </summary>
+        Public Sub CancelSearch()
+            m_Cts?.Cancel()
+        End Sub
+
+        Public Sub PauseSearch()
+
+        End Sub
+
+        Public Sub ResumeSearch()
+
+        End Sub
 #End Region
     End Class
 End Namespace

@@ -16,6 +16,11 @@ Namespace ShanXingTech.Alibaba
 
 #Region "属性区"
         Public ReadOnly Property Cookies As CookieContainer
+            Get
+                Return m_Http.Cookies
+            End Get
+        End Property
+
         Public ReadOnly Property UserAgent As String
 
         Private _m_h5_tk As String
@@ -72,7 +77,6 @@ Namespace ShanXingTech.Alibaba
         ''' <param name="cookies">可以是PC端登录成功后的cookies，如果没有操作淘宝 H5 端的cookies，那么工具会自动获取</param>
         ''' <param name="userAgent">需要模拟的浏览器的UserAgent</param>
         Protected Sub New(ByVal cookies As CookieContainer, ByVal userAgent As String)
-            Me.Cookies = cookies
             Me.UserAgent = userAgent
             m_Http = New HttpAsync(cookies)
             m_DefaultApiUrl = $"https://h5api.m.taobao.com/h5/mtop.taobao.baichuan.smb.get/1.0/?jsv=2.4.11&appKey={AppKey}&api=mtop.taobao.baichuan.smb.get&v=1.0&type=originaljson&dataType=jsonp&timeout=10000"
@@ -81,11 +85,17 @@ Namespace ShanXingTech.Alibaba
 #End Region
 
 #Region "函数区"
+        Private Sub Init()
+            _m_h5_tk = String.Empty
+            m_ExpireTime = Now.AddDays(-1)
+        End Sub
+
         ''' <summary>
         ''' 重新设置cookie以初始化
         ''' </summary>
         ''' <param name="cookies"></param>
         Public Sub ResetCookie(ByRef cookies As CookieContainer)
+            Init()
             m_Http.ReInit(cookies)
         End Sub
 
@@ -149,12 +159,30 @@ Namespace ShanXingTech.Alibaba
         ''' <param name="data">get方式使用Url参数data键的值,post方式使用请求文本body里data的值</param>
         ''' <returns>返回生成的Sign跟生成Sign时用的TimeStamp，执行API操作时需要用这个TimeStamp，否则有可能会返回 '非法请求'</returns>
         Public Async Function GetSignAsync(ByVal data As String) As Task(Of (Sign As String, TimeStamp As String))
+            Return Await InternalGetSignAsync(data, AppKey)
+        End Function
+
+        ''' <summary>
+        ''' 获取淘宝H5端API操作需要的Sign
+        ''' </summary>
+        ''' <param name="data">get方式使用Url参数data键的值,post方式使用请求文本body里data的值</param>
+        ''' <returns>返回生成的Sign跟生成Sign时用的TimeStamp，执行API操作时需要用这个TimeStamp，否则有可能会返回 '非法请求'</returns>
+        Public Async Function GetSignAsync(ByVal data As String, ByVal appkey As String) As Task(Of (Sign As String, TimeStamp As String))
+            Return Await InternalGetSignAsync(data, appkey)
+        End Function
+
+        ''' <summary>
+        ''' 获取淘宝H5端API操作需要的Sign
+        ''' </summary>
+        ''' <param name="data">get方式使用Url参数data键的值,post方式使用请求文本body里data的值</param>
+        ''' <returns>返回生成的Sign跟生成Sign时用的TimeStamp，执行API操作时需要用这个TimeStamp，否则有可能会返回 '非法请求'</returns>
+        Public Async Function InternalGetSignAsync(ByVal data As String, ByVal appkey As String) As Task(Of (Sign As String, TimeStamp As String))
             If _m_h5_tk.IsNullOrEmpty Then
                 _m_h5_tk = Await Getm_h5_tkAsync()
             End If
 
             Dim timeStamp = Date.Now.ToTimeStampString(TimePrecision.Millisecond)
-            Dim sign = $"{_m_h5_tk}&{timeStamp}&{AppKey}&{data}"
+            Dim sign = $"{_m_h5_tk}&{timeStamp}&{appkey}&{data}"
             sign = sign.GetMD5Value
 
             Return (sign, timeStamp)
@@ -165,7 +193,7 @@ Namespace ShanXingTech.Alibaba
         ''' </summary>
         ''' <returns></returns>
         Public Async Function ReGetBaseTokenAsync() As Task
-            _m_h5_tk = String.Empty
+            Init()
             m_ReGetBase_m_h5_tk = True
             Await Getm_h5_tkAsync()
         End Function
