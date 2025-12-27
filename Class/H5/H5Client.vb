@@ -109,13 +109,25 @@ Namespace ShanXingTech.Alibaba
         ''' <returns></returns>
         Public Async Function DoPostAsync(ByVal url As String, ByVal postData As String, ByVal referer As String, ByVal encoding As Text.Encoding) As Task(Of HttpResponse)
             Dim httpHeadersParam As New Dictionary(Of String, String) From {
-            {"User-Agent", UserAgent},
-            {"Connection", "keep-alive"},
-            {"Cache-Control", "no-cache"},
-            {"Accept-Encoding", "gzip, deflate"},
-            {"Referer", referer}
-        }
+                {"User-Agent", UserAgent},
+                {"Connection", "keep-alive"},
+                {"Cache-Control", "no-cache"},
+                {"Accept-Encoding", "gzip, deflate"},
+                {"Referer", referer}
+            }
 
+            Return Await m_Http.TryPostAsync(url, httpHeadersParam, postData, encoding, 3)
+        End Function
+
+        ''' <summary>
+        ''' 执行Post请求
+        ''' </summary>
+        ''' <param name="url"></param>
+        ''' <param name="postData">请求主体，不需要编码，直接原字符串传入。如果传入有包含编码的数据，可能会导致乱码或者数据丢失</param>
+        ''' <param name="encoding">请求主体的编码方式，必须跟抓包的一致，否则可能会导致乱码</param>
+        ''' <param name="httpHeadersParam"></param>
+        ''' <returns></returns>
+        Public Async Function DoPostAsync(ByVal url As String, ByVal postData As String, ByVal encoding As Text.Encoding, httpHeadersParam As Dictionary(Of String, String)) As Task(Of HttpResponse)
             Return Await m_Http.TryPostAsync(url, httpHeadersParam, postData, encoding, 3)
         End Function
 
@@ -143,6 +155,52 @@ Namespace ShanXingTech.Alibaba
 
             Return getRst
         End Function
+
+        ''' <summary>
+        ''' 执行Get请求
+        ''' </summary>
+        ''' <param name="url"></param>
+        ''' <param name="referer">比如传入referer</param>
+        ''' <param name="customRequestHeader">如果不传入，则使用内部默认请求头，如果传入并有相同的头，则替换为自定义，其他仍使用内部默认请求头。</param>
+        ''' <returns></returns>
+        Public Async Function DoGetAsync(ByVal url As String, ByVal referer As String, Optional ByVal customRequestHeader As Dictionary(Of String, String) = Nothing) As Task(Of HttpResponse)
+            Dim httpHeadersParam As New Dictionary(Of String, String) From {
+                {"User-Agent", UserAgent},
+                {"Connection", "keep-alive"},
+                {"Cache-Control", "no-cache"},
+                {"Accept-Encoding", "gzip, deflate"},
+                {"Referer", referer}
+            }
+
+            TryAddOrUpdateRequestHeader(httpHeadersParam, customRequestHeader)
+
+            Dim getRst = Await m_Http.TryGetAsync(url, httpHeadersParam, 3)
+            ' "ret":["SUCCESS::调用成功"],"v":"1.0"}
+            ' "ret":["FAIL_SYS_ILLEGAL_ACCESS::非法请求"],"v":"1.0"}
+            ' 新版手机淘宝要求一定要先登录才能搜索，否则会返回 ret: ["RGV587_ERROR::SM" 20190104
+            While Not getRst.Success OrElse getRst.Message.Length = 0
+                getRst = Await m_Http.TryGetAsync(url, httpHeadersParam, 3)
+            End While
+
+            Return getRst
+        End Function
+
+        Private Sub TryAddOrUpdateRequestHeader(ByRef defaultHttpHeaders As Dictionary(Of String, String), ByRef customRequestHeader As Dictionary(Of String, String))
+            If customRequestHeader Is Nothing OrElse customRequestHeader.Count = 0 Then Return
+
+            For Each dic In customRequestHeader
+                If defaultHttpHeaders.ContainsKey(dic.Key) Then
+                    If Not defaultHttpHeaders(dic.Key).Equals(dic.Value, StringComparison.OrdinalIgnoreCase) Then
+                        defaultHttpHeaders(dic.Key) = dic.Value
+                    Else
+                        Continue For
+                    End If
+                Else
+                    defaultHttpHeaders.Add(dic.Key, dic.Value)
+                End If
+            Next
+
+        End Sub
 
         ''' <summary>
         ''' 执行Get请求
@@ -229,7 +287,7 @@ Namespace ShanXingTech.Alibaba
                     Dim expired = m_ExpireTime < Now
                     ' 如果token已经过期，那么得把相应的cookie设置为失效状态，否则m_Http不会自动更新对应Cookie   20191225
                     If expired Then
-                        Cookies.TryExpire({"t", "_m_h5_tk", "_m_h5_tk_enc"})
+                        Cookies.TryExpire({"t", "_m_h5_c", "_m_h5_tk", "_m_h5_tk_enc"})
                     End If
 
                     ' 如果传入的是PC端的cookies，可能没有 _m_h5_tk 这个cookies

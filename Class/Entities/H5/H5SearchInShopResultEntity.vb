@@ -1,7 +1,8 @@
 ﻿' 闪星网络信息科技 Q2287190283
 ' 神即道, 道法自然, 如来
 Namespace ShanXingTech.Alibaba
-    Public Class H5SearchInShopResultEntity
+#Disable Warning BC40031 ' 名称不符合 CLS
+	Public Class H5SearchInShopResultEntity
 		Public Class SortBar
 			''' <summary>
 			''' 
@@ -203,10 +204,12 @@ Namespace ShanXingTech.Alibaba
 			''' 新品
 			''' </summary>
 			Public Property tabName() As String
+
 			''' <summary>
 			''' 
 			''' </summary>
 			Public Property _cost() As Double
+
 			''' <summary>
 			''' 
 			''' </summary>
@@ -318,5 +321,6 @@ Namespace ShanXingTech.Alibaba
 			Public Property v() As String
 		End Class
 	End Class
+#Enable Warning BC40031 ' 名称不符合 CLS
 End Namespace
 

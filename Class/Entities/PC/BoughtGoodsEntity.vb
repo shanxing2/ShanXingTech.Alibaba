@@ -237,6 +237,11 @@
             ''' 银色
             ''' </summary>
             Public Property value() As String
+            ''' <summary>
+            ''' SOLID
+            ''' </summary>
+            ''' <returns></returns>
+            Public Property visible() As String
         End Class
 
         Public Class ItemInfo
@@ -260,10 +265,10 @@
             ''' SkuId
             ''' </summary>
             Public Property skuId() As Long
-            ''' <summary>
-            ''' SkuText
-            ''' </summary>
-            Public Property skuText() As List(Of SkuText)
+            '''' <summary>
+            '''' SkuText
+            '''' </summary>
+            'Public Property skuText() As List(Of SkuText)
             ''' <summary>
             ''' //buyertrade.taobao.com/trade/detail/tradeSnap.htm?tradeID=123758723099428072&amp;snapShot=true
             ''' </summary>

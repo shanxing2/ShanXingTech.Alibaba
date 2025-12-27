@@ -106,7 +106,7 @@ Namespace ShanXingTech.Alibaba
         End Function
 
         Private Async Function UpdateTitle(ByVal keyword As String, ByVal baobeiUrl As String, ByVal httpHeadersParam As Dictionary(Of String, String)) As Task(Of Boolean)
-            Dim url = $"{baobeiUrl}&title={keyword.UrlEncode(Text.Encoding.UTF8)}"
+            Dim url = $"{baobeiUrl}&title={keyword.UrlEncode()}"
             Dim rst = Await TryDoGet(url, httpHeadersParam)
             ' 更新成功只返回一个 0
             Return "0".Equals(rst, StringComparison.OrdinalIgnoreCase)

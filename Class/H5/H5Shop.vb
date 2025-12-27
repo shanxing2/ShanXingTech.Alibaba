@@ -1,14 +1,17 @@
 ﻿Imports System.Net
 
 Namespace ShanXingTech.Alibaba
+#Disable Warning BC40031 ' 名称不符合 CLS
     Public Class H5Shop
         Inherits H5Client
 #Region "枚举区"
         Enum SearchSort
+
             ''' <summary>
             ''' 综合
             ''' </summary>
             _coefp
+
             ''' <summary>
             ''' 新品
             ''' </summary>
@@ -177,7 +180,7 @@ Namespace ShanXingTech.Alibaba
             Dim signInfo = Await GetSignAsync(dataSerialization)
             ' 必须得把data编码为大写的形式，否则会返回 FAIL_SYS_TRAFFIC_LIMIT::哎哟喂,被挤爆啦,请稍后重试!
             ' 经过反复测试，itemId%22%3A%22 这里的 3a 必须为 3A,否则就会出现上述错误，其他地方无所谓
-            Dim url = $"https://h5api.m.taobao.com/h5/mtop.taobao.detail.getdetail/6.0/?jsv=2.5.6&appKey={AppKey}&t={signInfo.TimeStamp}&sign={signInfo.Sign}&api=mtop.taobao.detail.getdetail&v=6.0&isSec=0&ecode=0&AntiFlood=true&AntiCreep=true&H5Request=true&ttid=2018%40taobao_h5_9.9.9&type=jsonp&dataType=jsonp&data={dataSerialization.UrlEncode(Text.Encoding.UTF8, UpperLowerCase.Upper)}"
+            Dim url = $"https://h5api.m.taobao.com/h5/mtop.taobao.detail.getdetail/6.0/?jsv=2.5.6&appKey={AppKey}&t={signInfo.TimeStamp}&sign={signInfo.Sign}&api=mtop.taobao.detail.getdetail&v=6.0&isSec=0&ecode=0&AntiFlood=true&AntiCreep=true&H5Request=true&ttid=2018%40taobao_h5_9.9.9&type=jsonp&dataType=jsonp&data={dataSerialization.UrlEncode(UpperLowerCase.Upper)}"
 
             Dim referer = $"https://h5.m.taobao.com/awp/core/detail.htm?id={itemId}&spm={spm}"
             Dim getRst = Await DoGetAsync(url, referer)
@@ -198,7 +201,7 @@ Namespace ShanXingTech.Alibaba
 
             Dim dataSerialization = data.Serialize
             Dim signInfo = Await GetSignAsync(dataSerialization)
-            Dim url = $"https://h5api.m.taobao.com/h5/mtop.taobao.shop.impression.intro.get/1.0/?jsv=2.4.2&appKey={AppKey}&t={signInfo.TimeStamp}&sign={signInfo.Sign}&api=mtop.taobao.shop.impression.intro.get&v=1.0&type=originaljson&secType=1&timeout=3000&AntiCreep=true&dataType=json&data={dataSerialization.UrlEncode(Text.Encoding.UTF8, UpperLowerCase.Upper)}"
+            Dim url = $"https://h5api.m.taobao.com/h5/mtop.taobao.shop.impression.intro.get/1.0/?jsv=2.4.2&appKey={AppKey}&t={signInfo.TimeStamp}&sign={signInfo.Sign}&api=mtop.taobao.shop.impression.intro.get&v=1.0&type=originaljson&secType=1&timeout=3000&AntiCreep=true&dataType=json&data={dataSerialization.UrlEncode(UpperLowerCase.Upper)}"
 
             Dim referer = $"https://market.m.taobao.com/app/tb-source-app/wz111/pages/impression?pathInfo=shop/impression&userId={sellerId}&shopId={shopId}&wh_weex=true&pageId=0&alisite=true"
             Dim getRst = Await DoGetAsync(url, referer)
@@ -206,5 +209,6 @@ Namespace ShanXingTech.Alibaba
         End Function
 #End Region
     End Class
+#Enable Warning BC40031 ' 名称不符合 CLS
 End Namespace
 
